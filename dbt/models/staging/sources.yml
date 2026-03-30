@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw
+    database: earthquake-analytics-491401 #TODO: Use your own project-ID
+    schema: earthquake_analytics
+    tables:
+      - name: earthquakes_raw
+        description: "Raw earthquake data ingested from the USGS Earthquake Catalog API. Contains historical data from 1568 to present, with daily incremental updates. Records may be duplicated as USGS revises magnitude and location data after initial publication."

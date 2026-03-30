@@ -1,0 +1,7 @@
+# Example terraform.tfvars - Copy this to terraform.tfvars and fill in your values
+# This is a template - safe to commit
+
+credentials     = "./keys/your-gcp-key.json"
+project         = "your-gcp-project-id"
+gcs_bucket_name = "your-project-id-unique-bucket-name"
+bq_dataset_name = "your-bigquery-dataset-name"

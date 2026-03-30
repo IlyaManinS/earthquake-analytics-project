@@ -1,0 +1,82 @@
+id: 02_historical_load
+namespace: earthquake
+description: |
+  Runs the historical backfill, creates the BigQuery table, and loads data from GCS.
+  Run this once to populate the pipeline with historical data.
+  Default date range is 1568-01 to 2026-03 — adjust inputs as needed.
+
+inputs:
+  - id: start_year
+    type: INT
+    defaults: 1568
+  - id: start_month
+    type: INT
+    defaults: 1
+  - id: end_year
+    type: INT
+    defaults: 2026
+  - id: end_month
+    type: INT
+    defaults: 3
+
+tasks:
+  - id: run_historical_ingestion
+    type: io.kestra.plugin.scripts.python.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/project/your-path-to-the-service-account-file #TODO: change it to your location file, preserve /app/project
+      GCP_PROJECT_ID: "{{kv('GCP_PROJECT_ID')}}"
+      GCP_BUCKET_NAME: "{{kv('GCP_BUCKET_NAME')}}"
+      GCP_DATASET: "{{kv('GCP_DATASET')}}"
+    commands:
+      - pip install -r /app/project/requirements.txt -q
+      - python /app/project/ingestion/ingest_earthquake_data.py --mode historical --start-year {{inputs.start_year}} --start-month {{inputs.start_month}} --end-year {{inputs.end_year}} --end-month {{inputs.end_month}}
+
+  - id: create_raw_table
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      CREATE TABLE IF NOT EXISTS `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.earthquakes_raw`
+      (
+        time            TIMESTAMP,
+        latitude        FLOAT64,
+        longitude       FLOAT64,
+        depth           FLOAT64,
+        mag             FLOAT64,
+        magType         STRING,
+        nst             FLOAT64,
+        gap             FLOAT64,
+        dmin            FLOAT64,
+        rms             FLOAT64,
+        net             STRING,
+        id              STRING,
+        updated         TIMESTAMP,
+        place           STRING,
+        type            STRING,
+        horizontalError FLOAT64,
+        depthError      FLOAT64,
+        magError        FLOAT64,
+        magNst          FLOAT64,
+        status          STRING,
+        locationSource  STRING,
+        magSource       STRING
+      )
+      PARTITION BY DATE_TRUNC(time, MONTH)
+      CLUSTER BY type, place
+      OPTIONS (require_partition_filter = false)
+
+  - id: load_to_bigquery
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      LOAD DATA INTO `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.earthquakes_raw`
+      FROM FILES (
+        format = 'PARQUET',
+        uris = ['gs://{{kv("GCP_BUCKET_NAME")}}/historical/*.parquet']
+      )
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{secret('GCP_SERVICE_ACCOUNT')}}"
+      projectId: "{{kv('GCP_PROJECT_ID')}}"
+      location: "{{kv('GCP_LOCATION')}}"

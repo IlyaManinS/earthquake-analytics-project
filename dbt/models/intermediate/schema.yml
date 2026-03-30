@@ -1,0 +1,84 @@
+version: 2
+
+models:
+  - name: int_earthquakes
+    description: "Intermediate earthquake model. Adds derived columns for region, magnitude category, depth category, and quadrant. Quality measurement columns dropped. Builds on stg_earthquakes."
+
+    columns:
+      - name: event_id
+        description: "Unique identifier for the earthquake event."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: occurred_at
+        description: "Timestamp when the earthquake occurred (UTC)."
+        data_tests:
+          - not_null
+
+      - name: updated_at
+        description: "Timestamp when the event record was last updated by USGS (UTC)."
+        data_tests:
+          - not_null
+
+      - name: latitude
+        description: "Decimal degrees latitude of the epicenter."
+
+      - name: longitude
+        description: "Decimal degrees longitude of the epicenter."
+
+      - name: depth_km
+        description: "Depth of the earthquake in kilometers."
+
+      - name: place
+        description: "Original textual description of the geographic region from USGS."
+
+      - name: region
+        description: "Cleaned region name extracted from place. State abbreviations resolved to full names via seed lookup."
+
+      - name: network
+        description: "The seismic network considered the preferred source of information for this event."
+
+      - name: location_source
+        description: "The seismic network that originally authored the reported location."
+
+      - name: magnitude
+        description: "The preferred magnitude for the event."
+
+      - name: magnitude_type
+        description: "The method used to calculate the preferred magnitude."
+
+      - name: magnitude_source
+        description: "The seismic network that originally authored the reported magnitude."
+
+      - name: magnitude_category
+        description: "Derived magnitude category. Minor (<2.0), Light (2.0-3.9), Moderate (4.0-5.9), Strong (>=6.0)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Minor', 'Light', 'Moderate', 'Strong', 'Unknown']
+
+      - name: depth_category
+        description: "Derived depth category per USGS classification. Shallow (0-70km), Intermediate (70-300km), Deep (300-700km)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Shallow', 'Intermediate', 'Deep', 'Unknown']
+
+      - name: quadrant
+        description: "Geographic quadrant derived from latitude and longitude. NE, NW, SE, or SW relative to the equator and prime meridian."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['NE', 'NW', 'SE', 'SW']
+
+      - name: event_type
+        description: "Type of seismic event."
+        data_tests:
+          - not_null
+
+      - name: status
+        description: "Indicates whether the event has been reviewed by a human."
+
+      - name: is_reviewed
+        description: "Boolean flag. TRUE if the event has been reviewed by a human (or manual entry), FALSE if automatic."

@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: stg_earthquakes
+    description: "Staged earthquake events from the USGS Catalog. Deduplicated by event_id keeping the most recently updated record. Strings are trimmed and lowercased where appropriate. All event types are retained — filtering to earthquakes only happens in the mart layer."
+
+    columns:
+      - name: event_id
+        description: "Unique identifier for the earthquake event assigned by USGS."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: occurred_at
+        description: "Timestamp when the earthquake occurred (UTC)."
+        data_tests:
+          - not_null
+
+      - name: updated_at
+        description: "Timestamp when the event record was last updated by USGS (UTC). Used for deduplication."
+        data_tests:
+          - not_null
+
+      - name: latitude
+        description: "Decimal degrees latitude of the epicenter. Negative values indicate southern latitudes."
+
+      - name: longitude
+        description: "Decimal degrees longitude of the epicenter. Negative values indicate western longitudes."
+
+      - name: depth_km
+        description: "Depth of the earthquake in kilometers."
+
+      - name: place
+        description: "Textual description of the geographic region near the event. May be a city name or a Flinn-Engdahl region name."
+
+      - name: network
+        description: "The ID of the seismic network considered the preferred source of information for this event."
+
+      - name: location_source
+        description: "The seismic network that originally authored the reported location of this event."
+
+      - name: magnitude
+        description: "The preferred magnitude for the event as reported by USGS."
+
+      - name: magnitude_type
+        description: "The method or algorithm used to calculate the preferred magnitude (e.g. ml, md, mw). Lowercased for consistency."
+
+      - name: magnitude_source
+        description: "The seismic network that originally authored the reported magnitude for this event."
+
+      - name: magnitude_error
+        description: "Estimated standard error of the reported magnitude."
+
+      - name: magnitude_station_count
+        description: "Total number of seismic stations used to calculate the magnitude."
+
+      - name: location_station_count
+        description: "Total number of seismic stations used to determine the earthquake location."
+
+      - name: azimuthal_gap
+        description: "Largest azimuthal gap between adjacent stations in degrees. Smaller values indicate more reliable horizontal location."
+
+      - name: nearest_station_distance_deg
+        description: "Horizontal distance from the epicenter to the nearest station in degrees. 1 degree ≈ 111.2 km."
+
+      - name: rms
+        description: "Root-mean-square travel time residual in seconds. Smaller values indicate a better fit of observed to predicted arrival times."
+
+      - name: horizontal_error_km
+        description: "Uncertainty of the reported location in kilometers."
+
+      - name: depth_error_km
+        description: "Uncertainty of the reported depth in kilometers."
+
+      - name: event_type
+        description: "Type of seismic event. Lowercased for consistency."
+        data_tests:
+          - not_null
+
+      - name: status
+        description: "Indicates whether the event has been reviewed by a human. Either 'automatic', 'reviewed' or 'manual'."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['automatic', 'reviewed', 'manual']

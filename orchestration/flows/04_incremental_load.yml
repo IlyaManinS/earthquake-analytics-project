@@ -1,0 +1,57 @@
+id: 04_incremental_load
+namespace: earthquake
+description: |
+  Daily incremental load — fetches new and revised earthquakes from USGS API,
+  appends them to the BigQuery raw table, then refreshes all dbt mart tables.
+  dbt deduplicates revised records on updated DESC in the staging layer.
+  Scheduled at 01:00 UTC daily (USGS updates their catalog hourly).
+
+triggers:
+  - id: daily_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 1 * * *"
+
+tasks:
+  - id: run_incremental_ingestion
+    type: io.kestra.plugin.scripts.python.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/project/your-path-to-the-service-account-file #TODO: change it to your location file, preserve /app/project
+      GCP_PROJECT_ID: "{{kv('GCP_PROJECT_ID')}}"
+      GCP_BUCKET_NAME: "{{kv('GCP_BUCKET_NAME')}}"
+      GCP_DATASET: "{{kv('GCP_DATASET')}}"
+    commands:
+      - pip install -r /app/project/requirements.txt -q
+      - python /app/project/ingestion/ingest_earthquake_data.py --mode incremental
+
+  - id: load_to_bigquery
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      LOAD DATA INTO `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.earthquakes_raw`
+      FROM FILES (
+        format = 'PARQUET',
+        uris = ['gs://{{kv("GCP_BUCKET_NAME")}}/incremental/earthquake-incremental-{{ now() | dateAdd(-1, "DAYS") | date("yyyy-MM-dd") }}.parquet']
+      )
+
+  # TODO: uncomment this task after completing dbt setup (see README dbt section)
+  # Requires dbt/profiles.yml to be configured with your GCP credentials
+  # - id: run_dbt
+  #   type: io.kestra.plugin.scripts.python.Commands
+  #   taskRunner:
+  #     type: io.kestra.plugin.core.runner.Process
+  #   env:
+  #     GOOGLE_APPLICATION_CREDENTIALS: /app/project/your-path-to-the-service-account-file #TODO: change to your key path, preserve /app/project
+  #     GCP_PROJECT_ID: "{{kv('GCP_PROJECT_ID')}}"
+  #     GCP_DATASET: "{{kv('GCP_DATASET')}}"
+  #     GCP_LOCATION: "{{kv('GCP_LOCATION')}}"
+  #   commands:
+  #     - pip install dbt-bigquery -q
+  #     - cd /app/project/dbt && dbt run --profiles-dir /app/project/dbt
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{secret('GCP_SERVICE_ACCOUNT')}}"
+      projectId: "{{kv('GCP_PROJECT_ID')}}"
+      location: "{{kv('GCP_LOCATION')}}"
