@@ -1,0 +1,7 @@
+requests
+pandas
+pyarrow
+certifi
+google-cloud-storage
+google-cloud-bigquery
+python-dotenv

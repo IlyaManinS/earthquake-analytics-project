@@ -1,0 +1,55 @@
+id: 03_create_table_and_load
+namespace: earthquake
+description: |
+  Creates the BigQuery table and loads historical data from GCS.
+  Use this if you already ran the historical ingestion script manually
+  and your Parquet files are already in GCS under historical/.
+
+tasks:
+  - id: create_raw_table
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      CREATE TABLE IF NOT EXISTS `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.earthquakes_raw`
+      (
+        time            TIMESTAMP,
+        latitude        FLOAT64,
+        longitude       FLOAT64,
+        depth           FLOAT64,
+        mag             FLOAT64,
+        magType         STRING,
+        nst             FLOAT64,
+        gap             FLOAT64,
+        dmin            FLOAT64,
+        rms             FLOAT64,
+        net             STRING,
+        id              STRING,
+        updated         TIMESTAMP,
+        place           STRING,
+        type            STRING,
+        horizontalError FLOAT64,
+        depthError      FLOAT64,
+        magError        FLOAT64,
+        magNst          FLOAT64,
+        status          STRING,
+        locationSource  STRING,
+        magSource       STRING
+      )
+      PARTITION BY DATE_TRUNC(time, MONTH)
+      CLUSTER BY type, place
+      OPTIONS (require_partition_filter = false)
+
+  - id: load_to_bigquery
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      LOAD DATA INTO `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.earthquakes_raw`
+      FROM FILES (
+        format = 'PARQUET',
+        uris = ['gs://{{kv("GCP_BUCKET_NAME")}}/historical/*.parquet']
+      )
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{secret('GCP_SERVICE_ACCOUNT')}}"
+      projectId: "{{kv('GCP_PROJECT_ID')}}"
+      location: "{{kv('GCP_LOCATION')}}"

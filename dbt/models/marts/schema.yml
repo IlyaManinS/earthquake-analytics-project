@@ -1,0 +1,147 @@
+version: 2
+
+models:
+  - name: mart_earthquakes_by_region
+    description: "Aggregated earthquake counts and magnitude metrics by region, quadrant, magnitude category and depth category. Filtered to event_type = 'earthquake'. Powers geographic and categorical dashboard tiles."
+
+    columns:
+      - name: region
+        description: "Cleaned region name extracted from USGS place field. State abbreviations resolved to full names."
+
+      - name: quadrant
+        description: "Geographic quadrant relative to equator and prime meridian. NE, NW, SE, or SW."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['NE', 'NW', 'SE', 'SW']
+
+      - name: magnitude_category
+        description: "Magnitude category. Minor (<2.0), Light (2.0-3.9), Moderate (4.0-5.9), Strong (>=6.0)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Minor', 'Light', 'Moderate', 'Strong', 'Unknown']
+
+      - name: depth_category
+        description: "Depth category per USGS classification. Shallow (0-70km), Intermediate (70-300km), Deep (300-700km)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Shallow', 'Intermediate', 'Deep', 'Unknown']
+
+      - name: event_count
+        description: "Total number of earthquake events for this grouping."
+        data_tests:
+          - not_null
+
+      - name: avg_magnitude
+        description: "Average magnitude for this grouping, rounded to 2 decimal places."
+
+      - name: max_magnitude
+        description: "Maximum magnitude recorded for this grouping."
+
+      - name: min_magnitude
+        description: "Minimum magnitude recorded for this grouping."
+
+  - name: mart_earthquakes_over_time
+    description: "Aggregated earthquake counts and magnitude metrics by month, magnitude category, depth category and quadrant. Filtered to event_type = 'earthquake'. Powers temporal dashboard tiles."
+
+    columns:
+      - name: event_month
+        description: "First day of the month in which the earthquakes occurred (DATE_TRUNC to MONTH)."
+        data_tests:
+          - not_null
+
+      - name: event_year
+        description: "Year in which the earthquakes occurred."
+        data_tests:
+          - not_null
+
+      - name: magnitude_category
+        description: "Magnitude category. Minor (<2.0), Light (2.0-3.9), Moderate (4.0-5.9), Strong (>=6.0)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Minor', 'Light', 'Moderate', 'Strong', 'Unknown']
+
+      - name: depth_category
+        description: "Depth category per USGS classification. Shallow (0-70km), Intermediate (70-300km), Deep (300-700km)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Shallow', 'Intermediate', 'Deep', 'Unknown']
+
+      - name: quadrant
+        description: "Geographic quadrant. NE, NW, SE, or SW."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['NE', 'NW', 'SE', 'SW']
+
+      - name: event_count
+        description: "Total number of earthquake events for this grouping."
+        data_tests:
+          - not_null
+
+      - name: avg_magnitude
+        description: "Average magnitude for this grouping, rounded to 2 decimal places."
+
+      - name: max_magnitude
+        description: "Maximum magnitude recorded for this grouping."
+
+      - name: min_magnitude
+        description: "Minimum magnitude recorded for this grouping."
+
+  - name: mart_significant_earthquakes
+    description: "Individual earthquake events with magnitude >= 6.0. Not aggregated. Filtered to event_type = 'earthquake'. Powers detail table and map tiles in the dashboard."
+
+    columns:
+      - name: event_id
+        description: "Unique identifier for the earthquake event."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: occurred_at
+        description: "Timestamp when the earthquake occurred (UTC)."
+        data_tests:
+          - not_null
+
+      - name: latitude
+        description: "Decimal degrees latitude of the epicenter."
+
+      - name: longitude
+        description: "Decimal degrees longitude of the epicenter."
+
+      - name: depth_km
+        description: "Depth of the earthquake in kilometers."
+
+      - name: depth_category
+        description: "Depth category. Shallow, Intermediate, or Deep."
+
+      - name: place
+        description: "Original textual description of the geographic region from USGS."
+
+      - name: region
+        description: "Cleaned region name."
+
+      - name: quadrant
+        description: "Geographic quadrant. NE, NW, SE, or SW."
+
+      - name: magnitude
+        description: "The preferred magnitude for the event. All values >= 6.0."
+        data_tests:
+          - not_null
+
+      - name: magnitude_type
+        description: "The method used to calculate the preferred magnitude."
+
+      - name: magnitude_category
+        description: "Magnitude category. All values should be Strong for this mart."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Strong']
+
+      - name: is_reviewed
+        description: "TRUE if the event has been reviewed by a human."
