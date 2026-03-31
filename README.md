@@ -33,7 +33,7 @@ The data is then transformed using dbt across three layers: staging cleans and d
 1. **GCP**: create a project, two service accounts (Terraform + pipeline), download their JSON keys
 2. **Terraform**: provision GCS bucket and BigQuery dataset (`terraform init && terraform apply`)
 3. **Kestra**: encode your service account, start Docker (`docker-compose up -d`), run `01_gcp_kv` flow
-4. **Historical load**: run `02_historical_load` flow in Kestra (ingests USGS data, creates BQ table, loads from GCS) (run `03_create_table_and_load` flow after if you want to work with the historical data only)
+4. **Historical load**: run `02_historical_load` flow in Kestra (ingests USGS data, creates BQ table, loads from GCS) (if you run the ingestion script manually via Python run `03_create_table_and_load` flow after if you want to work with the historical data only)
 5. **Incremental load**: if you want to see how the increments work without dbt transformations, run `04_incremental_load.yml` with the commented out dbt section
 6. **dbt**: configure `~/.dbt/profiles.yml`, then `dbt seed && dbt run && dbt test`
 7. **Incremental with dbt transformation**: uncomment the dbt step in `04_incremental_load.yml`; daily runs are automatic while Docker is running
