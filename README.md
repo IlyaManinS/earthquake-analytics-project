@@ -25,15 +25,19 @@ The data is then transformed using dbt across three layers: staging cleans and d
 
 ---
 
+<img width="598" height="439" alt="image" src="https://github.com/user-attachments/assets/9b650b06-3328-4384-ac03-03d34c860728" />
+
+
 ## Quick Start
 
 1. **GCP**: create a project, two service accounts (Terraform + pipeline), download their JSON keys
 2. **Terraform**: provision GCS bucket and BigQuery dataset (`terraform init && terraform apply`)
 3. **Kestra**: encode your service account, start Docker (`docker-compose up -d`), run `01_gcp_kv` flow
 4. **Historical load**: run `02_historical_load` flow in Kestra (ingests USGS data, creates BQ table, loads from GCS) (run `03_create_table_and_load` flow after if you want to work with the historical data only)
-5. **dbt**: configure `~/.dbt/profiles.yml`, then `dbt seed && dbt run && dbt test`
-6. **Incremental**: uncomment the dbt step in `04_incremental_load.yml`; daily runs are automatic while Docker is running
-7. **Dashboard**: connect Looker Studio to the BigQuery mart tables
+5. **Incremental load**: if you want to see how the increments work without dbt transformations, run `04_incremental_load.yml` with the commented out dbt section
+6. **dbt**: configure `~/.dbt/profiles.yml`, then `dbt seed && dbt run && dbt test`
+7. **Incremental with dbt transformation**: uncomment the dbt step in `04_incremental_load.yml`; daily runs are automatic while Docker is running
+8. **Dashboard**: connect Looker Studio to the BigQuery mart tables
 
 Each step is detailed in the sections below.
 
@@ -431,6 +435,17 @@ marts/
 Built in Looker Studio, connected directly to BigQuery mart models.
 
 **Tiles:**
-1. Distribution of earthquakes by magnitude range or region (categorical)
-2. Earthquake count or average magnitude over time (temporal)
-3. Significant earthquakes map (magnitude >= 6.0)
+1. Bar Chart distribution of earthquakes by region with magnitude category breakdown (categorical)
+   
+   <img width="2252" height="1578" alt="image" src="https://github.com/user-attachments/assets/bbb7eeb5-a93d-43e4-95e3-5794180fca5e" />
+
+   
+3. Earthquake count with average magnitude over time since 1990 (temporal)
+   
+   <img width="1960" height="1204" alt="image" src="https://github.com/user-attachments/assets/24b9b97e-0d7f-46b0-b3d6-e5344f8f4b40" />
+   
+
+4. Significant earthquakes map (magnitude >= 6.0)
+   
+   <img width="2646" height="1338" alt="image" src="https://github.com/user-attachments/assets/66e3e310-a97a-4793-a5c6-385af79d249c" />
+
