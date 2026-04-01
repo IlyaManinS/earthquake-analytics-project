@@ -433,6 +433,7 @@ marts/
 ## Dashboard
 
 Built in Looker Studio, connected directly to BigQuery mart models.
+Access to the Looker Studio View: https://lookerstudio.google.com/u/0/reporting/739d39ab-29df-4705-89c9-a22ad9976876/page/p_65wdijqa2d
 
 **Tiles:**
 1. Bar Chart distribution of earthquakes by region with magnitude category breakdown (categorical)
