@@ -1,0 +1,54 @@
+name: dbt run
+
+# Rebuild and test dbt models in BigQuery whenever dbt changes are merged into main
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dbt/**"
+  workflow_dispatch:
+
+concurrency:
+  group: dbt-run
+  cancel-in-progress: false
+
+jobs:
+  dbt-run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbt
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_DATASET: earthquake_analytics
+      GCP_LOCATION: US
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-key.json
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt
+        run: pip install dbt-bigquery
+
+      # dbt/profiles.yml reads the keyfile path from GOOGLE_APPLICATION_CREDENTIALS
+      - name: Write service account key
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        run: printf '%s' "$GCP_SERVICE_ACCOUNT_KEY" > "$GOOGLE_APPLICATION_CREDENTIALS"
+
+      - name: dbt seed
+        run: dbt seed --profiles-dir .
+
+      - name: dbt run
+        run: dbt run --profiles-dir .
+
+      - name: dbt test
+        run: dbt test --profiles-dir .
+
+      - name: Remove service account key
+        if: always()
+        run: rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
