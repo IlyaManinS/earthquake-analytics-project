@@ -357,6 +357,15 @@ dbt run         # build all models
 dbt test        # run all tests
 ```
 
+### CI/CD
+
+`.github/workflows/dbt_run.yml` runs `dbt seed`, `dbt run` and `dbt test` against BigQuery whenever changes under `dbt/` are merged into `main` (it can also be triggered manually from the Actions tab). It uses the repo-level `dbt/profiles.yml` and needs two repository settings:
+
+| Setting | Type | Value |
+|---------|------|-------|
+| `GCP_SERVICE_ACCOUNT_KEY` | Secret | Contents of the pipeline service account JSON key |
+| `GCP_PROJECT_ID` | Variable | Your GCP project ID |
+
 ### Model Layers
 
 ```
